@@ -51,6 +51,36 @@ JEV_MCP_HEADER=Authorization: Bearer REPLACE_ME
 
 `config.env`は`.gitignore`対象です。
 
+## Execution routing policy
+
+このセットアップでは、Jevを「モデルを頻繁に切り替えるルーター」ではなく、**主にeffortを選ぶ軽量な実行ルーター**として扱います。
+
+基本方針:
+
+- 同一セッション内ではmodelを原則固定する
+- Jevは主に `medium / high / max` などのeffortを選ぶ
+- セッション途中でmodelを切り替えてprompt cacheを失う構成は避ける
+- より強いmodelが本当に必要な場合は、現在のセッションを置き換えるのではなく、別workerとして起動する
+- 別workerには会話履歴全体ではなく、必要なタスク・ファイル・制約・完了条件だけを渡す
+- Jevの判断が無効・取得不能・低信頼なら、現在のmodelとホストのデフォルトeffortを使う
+
+イメージ:
+
+```text
+current Claude session
+        │
+        ├─ Jev -> medium effort
+        ├─ Jev -> high effort
+        └─ Jev -> max effort
+
+        必要な場合のみ
+
+        └─ separate stronger worker
+              └─ 必要な情報だけ渡す
+```
+
+この設計は、Jevのルーティング効果を得つつ、model切り替えによる不要なcontext再処理やcache missを抑えることを意図しています。
+
 ## What gets installed
 
 ```text
