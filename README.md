@@ -1,37 +1,44 @@
 # claude-code-jev-setup
 
-Claude CodeへJev MCPを**ユーザーグローバル**で導入するための小さなセットアップrepoです。
-各プロジェクトの`CLAUDE.md`は変更しません。
+Claude CodeへJev MCPを**ユーザーグローバル**で導入するためのセットアップツールです。
 
-導入すると次の2点だけがユーザー環境へ追加されます。
+各プロジェクトの`CLAUDE.md`を変更せず、Jev連携をClaude Codeのユーザー設定として独立して追加します。
+
+導入されるのは次の2点だけです。
 
 1. Jev MCPを`--scope user`で登録
 2. `~/.claude/rules/jev.md`へJev専用ルールを配置
 
-そのため、将来Claude Code側でJev連携が標準化された場合も簡単に削除できます。
+そのため、既存プロジェクトへの影響を抑えつつ導入でき、将来Claude Code側でJev連携が標準提供された場合も簡単に切り離せます。
 
-## セットアップ
+## Setup
 
 ### macOS / Linux / WSL
 
 ```bash
+git clone https://github.com/ShunsukeTamura06/claude-code-jev-setup.git
+cd claude-code-jev-setup
+
 cp config.example.env config.env
-# config.env の JEV_MCP_URL を社内環境のURLに変更
+# config.env の JEV_MCP_URL を利用するJev MCPのURLに変更
 ./install.sh
 ```
 
 ### Windows PowerShell
 
 ```powershell
+git clone https://github.com/ShunsukeTamura06/claude-code-jev-setup.git
+cd claude-code-jev-setup
+
 Copy-Item config.example.env config.env
-# config.env の JEV_MCP_URL を編集
+# config.env の JEV_MCP_URL を利用するJev MCPのURLに変更
 .\install.ps1
 ```
 
-## 設定例
+## Configuration
 
 ```env
-JEV_MCP_URL=http://your-internal-host:8000/mcp
+JEV_MCP_URL=http://your-jev-host:8000/mcp
 JEV_MCP_NAME=jev
 JEV_MCP_HEADER=
 ```
@@ -44,15 +51,67 @@ JEV_MCP_HEADER=Authorization: Bearer REPLACE_ME
 
 `config.env`は`.gitignore`対象です。
 
-## 確認
+## What gets installed
+
+```text
+Claude Code
+  ├─ user-scope MCP: Jev
+  └─ ~/.claude/rules/jev.md
+          ↓
+      all projects
+      (project files remain unchanged)
+```
+
+Jevはプロジェクト固有の依存ではなく、**Claude Codeの実行時拡張**として扱います。
+
+この構成により、以下を各プロジェクトから独立して変更できます。
+
+- Jev MCPのURL
+- 認証方式
+- Jev利用ルール
+- Jev自体の有効化・無効化
+- 将来の標準Jev連携への移行
+
+## Verify
 
 ```bash
 claude mcp list
 ```
 
-Claude Code内では `/mcp` でも確認できます。
+Claude Code内では `/mcp` でも接続状況を確認できます。
 
-## 削除
+## Uninstall
+
+### macOS / Linux / WSL
+
+```bash
+./uninstall.sh
+```
+
+### Windows PowerShell
+
+```powershell
+.\uninstall.ps1
+```
+
+削除されるのは次の2点だけです。
+
+- user scopeで登録したJev MCP
+- `~/.claude/rules/jev.md`
+
+以下は変更・削除されません。
+
+- 各リポジトリのコード
+- 各プロジェクトの`CLAUDE.md`
+- `~/.claude/CLAUDE.md`
+- その他のMCP設定
+- その他の`~/.claude/rules/`配下のルール
+
+## Migrating to native Jev support
+
+将来Claude CodeがJev連携を標準機能として提供した場合、このセットアップはそのまま削除できます。
+
+### 1. この連携を削除
 
 macOS / Linux / WSL:
 
@@ -66,72 +125,39 @@ Windows:
 .\uninstall.ps1
 ```
 
-これでJev MCP登録と`~/.claude/rules/jev.md`だけを削除します。
-既存のプロジェクト`CLAUDE.md`やユーザー`~/.claude/CLAUDE.md`には触れません。
+### 2. Claude Code標準のJev機能を有効化
 
-## 将来Jev連携がClaude Codeの標準機能になった場合
+その時点のClaude Code公式手順に従って標準機能を設定してください。
 
-このrepoは、Jev依存をClaude Codeのユーザー設定だけに閉じ込めています。
-アプリケーションコードや各プロジェクトの`CLAUDE.md`にはJev依存を追加しません。
+このリポジトリはアプリケーションコードやプロジェクトの`CLAUDE.md`にJev依存を追加しないため、コード変更や移行作業は不要です。
 
-そのため、Claude Code側でJev連携が標準提供された場合は、次の手順だけでこの自作連携を切り離せます。
+### Manual removal
 
-### macOS / Linux / WSL
-
-```bash
-./uninstall.sh
-```
-
-### Windows PowerShell
-
-```powershell
-.\uninstall.ps1
-```
-
-アンインストールで削除されるのは次の2点だけです。
-
-- user scopeで登録したJev MCP
-- `~/.claude/rules/jev.md`
-
-以下は変更・削除されません。
-
-- 各リポジトリのコード
-- 各プロジェクトの`CLAUDE.md`
-- `~/.claude/CLAUDE.md`
-- その他のMCP設定
-- その他の`~/.claude/rules/`配下のルール
-
-削除後は、Claude Code標準のJev機能を有効化してください。
-標準機能側で別の設定やルールが必要な場合は、その時点のClaude Code公式手順に従ってください。
-
-### 手動で切り離す場合
-
-スクリプトを使わない場合でも、次の2操作だけです。
+スクリプトを使わず手動で削除する場合:
 
 ```bash
 claude mcp remove jev --scope user
 rm ~/.claude/rules/jev.md
 ```
 
-Windowsでは、MCP登録を削除した後に
-`%USERPROFILE%\.claude\rules\jev.md`を削除してください。
-
-## 設計方針
-
-このrepoでは、Jevをプロジェクト固有の依存ではなく、**Claude Codeの実行時拡張**として扱います。
+WindowsではMCP登録を削除した後、
 
 ```text
-Claude Code
-  ├─ user-scope MCP: Jev
-  └─ ~/.claude/rules/jev.md
-          ↓
-      各プロジェクト
-      （変更なし）
+%USERPROFILE%\.claude\rules\jev.md
 ```
 
-この構成にすることで、Jev MCPのURL変更、認証方式の変更、標準機能への移行、Jev自体の利用停止を、各プロジェクトから独立して行えます。
+を削除してください。
 
-## 社内配布
+## Files
 
-このrepoをcloneして`config.env`のURLだけ設定すれば導入できます。
-URLや認証方式が確定したら、社内向けブランチで`config.example.env`の初期値を更新してください。
+```text
+.
+├── README.md
+├── config.example.env
+├── install.sh
+├── install.ps1
+├── uninstall.sh
+├── uninstall.ps1
+└── rules/
+    └── jev.md
+```
